@@ -8,16 +8,26 @@ class authService {
         return prisma.user.findUnique({ where: { email } });
     }
 
-    static async registerUser (email, password) {
+    static async registerUser(name, email, password, isAdmin = false) {
         const existingUser = await this.findUserByEmail(email);
         if (existingUser) {
             throw new Error('User already exists');
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
-            data: { email, password: hashedPassword },
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                is_admin: isAdmin
+            },
         });
-        return { id: user.id, email: user.email };
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            is_admin: user.is_admin
+        };
     };
 
     static async loginUser(email, password) {
@@ -29,8 +39,24 @@ class authService {
         if (!isMatch) {
             throw new Error('Invalid credentials');
         }
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        return { token };
+        const token = jwt.sign(
+            {
+                userId: user.id,
+                email: user.email,
+                isAdmin: user.is_admin
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        return {
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                is_admin: user.is_admin
+            }
+        };
     };
 }
 

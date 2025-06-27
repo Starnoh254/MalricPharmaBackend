@@ -3,9 +3,9 @@ const authService = require('../services/authService');
 class authController {
   // Register a new user
   static async register (req, res) {
-    const { email, password } = req.body;
+    const { name ,  email, password } = req.body;
     try {
-      const user = await authService.registerUser(email, password);
+      const user = await authService.registerUser(name , email, password);
       res.status(201).json({ message: 'User registered', user });
     } catch (err) {
       if (err.message === 'User already exists') {
