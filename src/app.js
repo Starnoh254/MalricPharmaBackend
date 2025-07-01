@@ -17,6 +17,8 @@ const corsOptions = {
             'http://127.0.0.1:3000',  // Alternative localhost
             'http://127.0.0.1:5173',  // Alternative localhost
             'http://localhost:5173',  // Alternative localhost
+            'http://127.0.0.1:5175',  // Alternative localhost
+            'http://localhost:5175',  // Alternative localhost
         ],
     credentials: true,            // Allow cookies/auth headers
     optionsSuccessStatus: 200,    // For legacy browser support

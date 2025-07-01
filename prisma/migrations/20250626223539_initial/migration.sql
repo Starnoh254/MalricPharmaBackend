@@ -5,7 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `is_admin` BOOLEAN NOT NULL;
+ALTER TABLE `User` ADD COLUMN `is_admin` BOOLEAN NOT NULL;
 
 -- CreateTable
 CREATE TABLE `Product` (

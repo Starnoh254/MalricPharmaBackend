@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `user` MODIFY `is_admin` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `User` MODIFY `is_admin` BOOLEAN NOT NULL DEFAULT false;

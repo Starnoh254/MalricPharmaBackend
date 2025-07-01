@@ -20,7 +20,7 @@ router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
 
 
-router.use(authMiddleware.authenticateToken);
+router.use(authMiddleware);
 
 router.post('/', authMiddleware.authorizeAdmin, parser.single('image'), productController.createProduct);
 router.put('/:id', authMiddleware.authorizeAdmin, parser.single('image'), productController.updateProduct);

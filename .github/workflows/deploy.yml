@@ -3,32 +3,107 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - main  # Trigger deployment on pushes to the 'main' branch
+      - main # Trigger deployment on pushes to the 'main' branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout the repo
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # Checkout the repo
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Deploy to VPS using SSH
-    - name: Deploy to VPS
-      uses: appleboy/ssh-action@v0.1.7
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USER }}
-        key: ${{ secrets.VPS_SSH_KEY }}
-        script: |
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-            nvm use v22.14.0
-            cd /home/developer/MalricPharmaBackend
-            whoami
-            which node
-            echo $PATH
-            git pull origin main
-            node -v
-            npm install
+      # Deploy to VPS using SSH
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e  # Exit on any error
+
+            echo "🚀 Starting MalricPharma Backend Deployment..."
+            echo "📅 Deployment started at: $(date)"
+
+            # Navigate to the correct application directory
+            echo "📂 Navigating to application directory..."
+            cd /var/www/malricpharma/backend || { echo "❌ Failed to navigate to app directory"; exit 1; }
+
+            # Show current status before deployment
+            echo "📊 Current application status:"
+            pm2 status malricpharma-backend || echo "⚠️ Application not running"
+
+            # Create backup of current version
+            echo "💾 Creating backup..."
+            BACKUP_DIR="/var/backups/malricpharma"
+            mkdir -p $BACKUP_DIR
+            tar -czf $BACKUP_DIR/app_backup_$(date +%Y%m%d_%H%M%S).tar.gz . || echo "⚠️ Backup creation failed"
+
+            # Pull latest changes
+            echo "📥 Pulling latest changes from main branch..."
+            git fetch origin
+            git reset --hard origin/main
+
+            # Install production dependencies only
+            echo "📦 Installing production dependencies..."
+            npm ci --production --silent
+
+            # Install global dependencies if needed
+            echo "🔧 Ensuring Prisma CLI is available..."
+            npm list -g prisma || npm install -g prisma
+
+            # Generate Prisma client
+            echo "⚙️ Generating Prisma client..."
+            npx prisma generate
+
+            # Run database migrations
+            echo "🗄️ Running database migrations..."
+            npx prisma migrate deploy
+
+            # Check if PM2 app exists, if not create it
+            if ! pm2 describe malricpharma-backend > /dev/null 2>&1; then
+                echo "🆕 Creating new PM2 application..."
+                pm2 start ecosystem.config.js --env production
+            else
+                echo "🔄 Restarting existing PM2 application..."
+                pm2 restart malricpharma-backend
+            fi
+
+            # Save PM2 configuration
+            pm2 save
+
+            # Wait for app to start
+            echo "⏳ Waiting for application to start..."
+            sleep 10
+
+            # Health check
+            echo "🏥 Performing health check..."
+            if pm2 list | grep -q "online.*malricpharma-backend"; then
+                echo "✅ Application is running successfully!"
+            else
+                echo "❌ Application failed to start!"
+                echo "� Last 20 log lines:"
+                pm2 logs malricpharma-backend --lines 20
+                exit 1
+            fi
+
+            # Show final status
+            echo "📊 Final application status:"
+            pm2 status
+
+            # Test API endpoint if available
+            echo "🧪 Testing API endpoint..."
+            if curl -f -s https://api.malricpharma.co.ke/api/v1/health > /dev/null; then
+                echo "✅ API endpoint is responding!"
+            else
+                echo "⚠️ API endpoint test failed (might be normal if health endpoint doesn't exist)"
+            fi
+
+            # Cleanup old backups (keep last 5)
+            echo "🧹 Cleaning up old backups..."
+            cd $BACKUP_DIR && ls -t app_backup_*.tar.gz | tail -n +6 | xargs -r rm
+
+            echo "🎉 Deployment completed successfully!"
+            echo "📅 Deployment finished at: $(date)"

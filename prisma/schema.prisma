@@ -22,6 +22,11 @@ model User {
   name     String?
   is_admin Boolean @default(false)
   createdAt DateTime @default(now())
+  
+  // Relationships
+  orders          Order[]
+  statusChanges   OrderStatusHistory[]
+  refreshTokens   RefreshToken[]
 }
 
 model Product {
@@ -33,4 +38,128 @@ model Product {
   category       String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  
+  // Relationship with order items
+  orderItems   OrderItem[]
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  orderNumber     String    @unique
+  userId          Int
+  status          OrderStatus @default(PENDING)
+  totalAmount     Float
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  estimatedDelivery DateTime?
+  
+  // Shipping information (stored as JSON)
+  shippingInfo    Json
+  
+  // Payment information
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentReference String?
+  
+  // Optional notes
+  notes           String?
+  adminNotes      String?
+  
+  // Relationships
+  user            User      @relation(fields: [userId], references: [id])
+  orderItems      OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  payment         Payment?  // One-to-one relationship with payment
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  productId       Int
+  productName     String  // Snapshot of product name at time of order
+  price           Float   // Snapshot of price at time of order
+  quantity        Int
+  subtotal        Float
+  productSnapshot Json?   // Store complete product details
+  
+  // Relationships
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id          String   @id @default(cuid())
+  orderId     String
+  status      OrderStatus
+  changedBy   Int?
+  notes       String?
+  createdAt   DateTime @default(now())
+  
+  // Relationships
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedByUser User?  @relation(fields: [changedBy], references: [id])
+  
+  @@map("order_status_history")
+}
+
+model Payment {
+  id                    String   @id @default(cuid())
+  orderId               String   @unique
+  method                String   // 'mpesa', 'card', 'cod'
+  amount                Float
+  status                String   // 'pending', 'initiated', 'completed', 'failed', 'pending_delivery'
+  providerTransactionId String?  // M-Pesa CheckoutRequestID, Stripe PaymentIntent ID, etc.
+  mpesaReceiptNumber    String?  // M-Pesa receipt number when payment is successful
+  failureReason         String?  // Reason for payment failure
+  metadata              Json?    // Additional payment data (phone, transaction details, etc.)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  completedAt           DateTime? // When payment was completed
+  
+  // Relationships
+  order                 Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
+  
+  // Relationships
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("refresh_tokens")
+}
+
+// Enums for better type safety
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  MPESA
+  CARD
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
