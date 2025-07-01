@@ -46,10 +46,28 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
-            # Check Node.js version
+            # Check Node.js version and update if needed
             echo "🔍 Checking Node.js version..."
-            node --version
-            npm --version
+            NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+            echo "Current Node.js version: $(node --version)"
+            echo "Current npm version: $(npm --version)"
+
+            if [ "$NODE_VERSION" -lt 16 ]; then
+                echo "⚠️ Node.js version is too old (v$NODE_VERSION). Updating to LTS..."
+                
+                # Update Node.js to LTS
+                curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+                sudo apt-get install -y nodejs
+                
+                # Verify new version
+                echo "✅ Updated Node.js version: $(node --version)"
+                echo "✅ Updated npm version: $(npm --version)"
+                
+                # Reinstall PM2 with new Node.js
+                sudo npm install -g pm2@latest
+            else
+                echo "✅ Node.js version is compatible"
+            fi
 
             # Clean previous dependencies to avoid conflicts
             echo "🧹 Cleaning previous dependencies..."
