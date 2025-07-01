@@ -96,9 +96,31 @@ jobs:
             echo "⚙️ Generating Prisma client..."
             npx prisma generate
 
-            # Run database migrations
+            # Run database migrations with error handling
             echo "🗄️ Running database migrations..."
-            npx prisma migrate deploy
+            if npx prisma migrate deploy; then
+                echo "✅ Migrations completed successfully"
+            else
+                echo "❌ Migration failed, checking for failed migrations..."
+                
+                # Check migration status
+                npx prisma migrate status
+                
+                # Try to resolve common P3009 error for the known failed migration
+                echo "🔧 Attempting to resolve failed migrations..."
+                npx prisma migrate resolve --rolled-back 20250626223539_initial 2>/dev/null || echo "No specific failed migration to resolve"
+                
+                # Retry migration
+                echo "🔄 Retrying migrations..."
+                if npx prisma migrate deploy; then
+                    echo "✅ Migrations completed after resolution"
+                else
+                    echo "❌ Migration still failing, manual intervention required"
+                    echo "📋 Migration status:"
+                    npx prisma migrate status || echo "Could not get migration status"
+                    exit 1
+                fi
+            fi
 
             # Check if PM2 app exists, if not create it
             if ! pm2 describe malricpharma-backend > /dev/null 2>&1; then

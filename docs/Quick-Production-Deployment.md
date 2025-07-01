@@ -285,6 +285,16 @@ curl -X POST https://api.malricpharma.co.ke/api/v1/payments/mpesa/callback \
 
 ### If Something Goes Wrong:
 
+#### Node.js Version Issues:
+
+```bash
+# Check Node.js version in CI/CD context
+ssh user@server 'node --version'
+
+# Should be 16+ for modern packages
+# See: docs/Node-Version-Mismatch-CI-CD-Fix.md
+```
+
 #### 502 Bad Gateway:
 
 ```bash
@@ -383,8 +393,17 @@ Your deployment is successful when:
 
 ---
 
+## 📚 **Related Documentation**
+
+- 📖 [Node.js Version Mismatch Fix](./Node-Version-Mismatch-CI-CD-Fix.md) - Detailed issue analysis and solution
+- 🔧 [Deployment Troubleshooting Guide](./Deployment-Troubleshooting-Guide.md) - Step-by-step problem solving
+- 🏥 [Health Endpoint Documentation](./Health-Endpoint-Documentation.md) - API monitoring setup
+- 🚀 [M-Pesa Integration Guide](./M-Pesa-Integration-Guide.md) - Payment system setup
+
+**Need help with any specific step? Check the troubleshooting guide first!** 🤝
+
+---
+
 ## 🚀 ESTIMATED TIME: 1.5 HOURS TOTAL
 
 **You're almost there! Follow this checklist step by step and you'll have a production-ready API running on api.malricpharma.co.ke with proper SSL, database, and process management.**
-
-**Need help with any specific step? Just ask!** 🤝
