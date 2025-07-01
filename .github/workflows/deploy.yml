@@ -37,7 +37,7 @@ jobs:
 
             # Create backup of current version
             echo "💾 Creating backup..."
-            BACKUP_DIR="/var/backups/malricpharma"
+            BACKUP_DIR="$HOME/backups/malricpharma"
             mkdir -p $BACKUP_DIR
             tar -czf $BACKUP_DIR/app_backup_$(date +%Y%m%d_%H%M%S).tar.gz . || echo "⚠️ Backup creation failed"
 
@@ -103,7 +103,7 @@ jobs:
 
             # Cleanup old backups (keep last 5)
             echo "🧹 Cleaning up old backups..."
-            cd $BACKUP_DIR && ls -t app_backup_*.tar.gz | tail -n +6 | xargs -r rm
+            cd $BACKUP_DIR && ls -t app_backup_*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm || echo "No old backups to clean"
 
             echo "🎉 Deployment completed successfully!"
             echo "📅 Deployment finished at: $(date)"
