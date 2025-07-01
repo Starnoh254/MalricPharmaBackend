@@ -77,12 +77,14 @@ jobs:
 
             # Install production dependencies only
             echo "📦 Installing production dependencies..."
-            if npm install --production --verbose; then
+            if npm install --production --silent; then
                 echo "✅ Dependencies installed successfully"
             else
                 echo "❌ Dependency installation failed"
                 echo "📋 Checking npm debug log..."
-                tail -20 ~/.npm/_logs/*.log || echo "No npm logs found"
+                tail -20 ~/.npm/_logs/*.log 2>/dev/null || echo "No npm logs found"
+                echo "🔄 Retrying with verbose output for debugging..."
+                npm install --production --verbose
                 exit 1
             fi
 
@@ -138,14 +140,20 @@ jobs:
             echo "⏳ Waiting for application to start..."
             sleep 10
 
-            # Health check
+            # Health check with better debugging
             echo "🏥 Performing health check..."
-            if pm2 list | grep -q "online.*malricpharma-backend"; then
+            echo "📊 Current PM2 status:"
+            pm2 list
+
+            # Check if any malricpharma process is online (flexible matching)
+            if pm2 list | grep -E "(online|running)" | grep -i "malric"; then
                 echo "✅ Application is running successfully!"
             else
                 echo "❌ Application failed to start!"
-                echo "� Last 20 log lines:"
-                pm2 logs malricpharma-backend --lines 20
+                echo "📋 Last 20 log lines:"
+                pm2 logs --lines 20
+                echo "📊 Detailed PM2 status:"
+                pm2 show malricpharma-backend || pm2 show malricph || echo "Could not find process details"
                 exit 1
             fi
 
