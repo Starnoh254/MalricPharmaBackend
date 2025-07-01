@@ -46,13 +46,31 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
+            # Check Node.js version
+            echo "🔍 Checking Node.js version..."
+            node --version
+            npm --version
+
+            # Clean previous dependencies to avoid conflicts
+            echo "🧹 Cleaning previous dependencies..."
+            rm -rf node_modules package-lock.json
+
             # Install production dependencies only
             echo "📦 Installing production dependencies..."
-            npm ci --production --silent
+            if npm install --production --verbose; then
+                echo "✅ Dependencies installed successfully"
+            else
+                echo "❌ Dependency installation failed"
+                echo "📋 Checking npm debug log..."
+                tail -20 ~/.npm/_logs/*.log || echo "No npm logs found"
+                exit 1
+            fi
 
             # Install global dependencies if needed
             echo "🔧 Ensuring Prisma CLI is available..."
-            npm list -g prisma || npm install -g prisma
+            if ! command -v prisma &> /dev/null; then
+                npm install -g prisma@latest
+            fi
 
             # Generate Prisma client
             echo "⚙️ Generating Prisma client..."

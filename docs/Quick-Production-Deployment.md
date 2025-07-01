@@ -20,9 +20,12 @@ ssh root@your-vps-ip
 # Update system
 apt update && apt upgrade -y
 
-# Install Node.js LTS
-curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+# Install Node.js LTS (v18 or v20 - REQUIRED for Express 5+)
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 apt-get install -y nodejs
+
+# Verify Node.js version (must be 16+ for modern Express)
+node --version  # Should show v18.x.x or v20.x.x
 
 # Install other essentials
 apt install -y nginx mysql-server git
@@ -101,8 +104,14 @@ cd backend
 ### 2. Install Dependencies
 
 ```bash
+# Clear any cached dependencies
+rm -rf node_modules package-lock.json
+
+# Install production dependencies (requires Node.js 16+)
 npm install --production
-npm install -g prisma
+
+# Install global tools
+npm install -g prisma@latest
 ```
 
 ### 3. Create Production Environment File
