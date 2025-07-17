@@ -289,6 +289,11 @@ For production deployment and troubleshooting, refer to these comprehensive guid
 - **[Production VPS Setup Guide](./docs/Production-VPS-Setup-Guide.md)** - Initial server setup and configuration
 - **[Quick Production Deployment](./docs/Quick-Production-Deployment.md)** - Fast deployment instructions
 
+### Database & Data Management
+
+- **[Production-Safe Database Seeding](./docs/Production-Safe-Database-Seeding.md)** - Environment-aware seeding guide
+- **[Foreign Key Constraints Troubleshooting](./docs/Foreign-Key-Constraints-Troubleshooting.md)** - Database relationship issues
+
 ### Specific Issue Guides
 
 - **[Node Version Mismatch CI/CD Fix](./docs/Node-Version-Mismatch-CI-CD-Fix.md)** - Solving Node.js version conflicts
